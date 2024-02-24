@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:eazybank;DATABASE_TO_LOWER=true;DB_CLOSE_DELAY=-1;
+    username: sa
+    password: password
+    driver-class-name: org.h2.Driver
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true
+    defer-datasource-initialization: true
+  sql:
+    init:
+      platform: h2
+      schema-locations:
+      data-locations: classpath:data.sql
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8180/realms/eazybankdev/protocol/openid-connect/certs
+
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG
