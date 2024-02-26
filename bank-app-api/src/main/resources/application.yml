@@ -2,9 +2,10 @@ spring:
   datasource:
     url: jdbc:h2:mem:eazybank;DATABASE_TO_LOWER=true;DB_CLOSE_DELAY=-1;
     username: sa
-    password: password
+    password:
     driver-class-name: org.h2.Driver
   jpa:
+    open-in-view: false # https://www.baeldung.com/spring-open-session-in-view
     show-sql: true
     hibernate:
       ddl-auto: create-drop
@@ -16,9 +17,18 @@ spring:
     init:
       platform: h2
       schema-locations:
-      data-locations: classpath:data.sql
+      data-locations: classpath:sql/h2-data.sql
   security:
     oauth2:
       resourceserver:
         jwt:
           jwk-set-uri: http://localhost:8180/realms/eazybankdev/protocol/openid-connect/certs
+  h2:
+    console:
+      enabled: true
+
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG
