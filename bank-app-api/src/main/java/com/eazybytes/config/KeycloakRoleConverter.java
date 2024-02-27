@@ -8,20 +8,21 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
-public class KeycloakRoleConverter  implements Converter<Jwt, Collection<GrantedAuthority>> {
+public class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedAuthority>> {
+
+    public static final String EASYBANK_ROLES_CLAIM_KEY = "easybank/roles";
 
     @Override
     public Collection<GrantedAuthority> convert(Jwt jwt) {
-        Map<String, Object> realmAccess = (Map<String, Object>) jwt.getClaims().get("realm_access");
+        List<String> realmAccess = jwt.getClaimAsStringList(EASYBANK_ROLES_CLAIM_KEY);
 
         if (realmAccess == null || realmAccess.isEmpty()) {
             return new ArrayList<>();
         }
 
-        Collection<GrantedAuthority> returnValue = ((List<String>) realmAccess.get("roles"))
+        Collection<GrantedAuthority> returnValue = realmAccess
                 .stream().map(roleName -> "ROLE_" + roleName)
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());

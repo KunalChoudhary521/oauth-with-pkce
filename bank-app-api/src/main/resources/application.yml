@@ -22,7 +22,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: http://localhost:8180/realms/eazybankdev/protocol/openid-connect/certs
+          jwk-set-uri: ${JWK_SET_URI}
   h2:
     console:
       enabled: true
