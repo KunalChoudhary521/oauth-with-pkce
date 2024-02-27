@@ -1,7 +1,7 @@
 import { BrowserModule } from '@angular/platform-browser';
-import { APP_INITIALIZER,NgModule } from '@angular/core';
+import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { HttpClientModule, HttpClientXsrfModule } from '@angular/common/http';
+import { HttpClientModule, HttpClientXsrfModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { HeaderComponent } from './components/header/header.component';
@@ -14,22 +14,8 @@ import { AccountComponent } from './components/account/account.component';
 import { BalanceComponent } from './components/balance/balance.component';
 import { LoansComponent } from './components/loans/loans.component';
 import { CardsComponent } from './components/cards/cards.component';
-import { KeycloakAngularModule, KeycloakService } from 'keycloak-angular';
-
-function initializeKeycloak(keycloak: KeycloakService) {
-  return () =>
-    keycloak.init({
-      config: {
-        url: 'http://localhost:8180/',
-        realm: 'eazybankdev',
-        clientId: 'eazypublicclient',
-      },
-      initOptions: {
-        pkceMethod: 'S256',
-        redirectUri: 'http://localhost:4200/dashboard',
-      },loadUserProfileAtStartUp: false
-    });
-}
+import { AuthModule, AuthHttpInterceptor } from '@auth0/auth0-angular';
+import { environment } from '../environments/environment';
 
 @NgModule({
   declarations: [
@@ -49,21 +35,34 @@ function initializeKeycloak(keycloak: KeycloakService) {
     BrowserModule,
     AppRoutingModule,
     FormsModule,
-    KeycloakAngularModule,
     HttpClientModule,
+    AuthModule.forRoot({ //https://auth0.com/docs/quickstart/spa/angular/02-calling-an-api
+      domain: environment.domainUrl,
+      clientId: environment.clientId,
+      authorizationParams: {
+        redirect_uri: window.location.origin + '/home',
+        audience: environment.apiAudience
+      },
+      httpInterceptor: {
+        allowedList: [{
+          uri: `${environment.rooturl}/*`,
+          tokenOptions: {
+            authorizationParams: {
+              audience: environment.apiAudience,
+              scope: 'profile email'
+            }
+          }
+        }
+
+        ]
+      }
+    }),
     HttpClientXsrfModule.withOptions({
       cookieName: 'XSRF-TOKEN',
       headerName: 'X-XSRF-TOKEN',
     }),
   ],
-  providers: [
-    {
-      provide: APP_INITIALIZER,
-      useFactory: initializeKeycloak,
-      multi: true,
-      deps: [KeycloakService],
-    }
-  ],
+  providers: [{ provide: HTTP_INTERCEPTORS, useClass: AuthHttpInterceptor, multi: true }],
   bootstrap: [AppComponent]
 })
 export class AppModule {

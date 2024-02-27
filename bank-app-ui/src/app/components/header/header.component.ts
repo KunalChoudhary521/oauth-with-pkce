@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { User } from 'src/app/model/user.model';
-import { KeycloakService } from 'keycloak-angular';
-import { KeycloakProfile } from 'keycloak-js';
+import { AuthService } from '@auth0/auth0-angular';
+import { filter, switchMap } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-header',
@@ -9,33 +10,35 @@ import { KeycloakProfile } from 'keycloak-js';
   styleUrls: ['./header.component.css']
 })
 export class HeaderComponent implements OnInit {
-  
+
   user = new User();
 
-  public isLoggedIn = false;
-  public userProfile: KeycloakProfile | null = null;
-
-  constructor(private readonly keycloak: KeycloakService) { }
+  constructor(private authService: AuthService,
+              private state: ActivatedRoute) { }
 
   public async ngOnInit() {
-    this.isLoggedIn = await this.keycloak.isLoggedIn();
-
-    if (this.isLoggedIn) {
-      this.userProfile = await this.keycloak.loadUserProfile();
-      this.user.authStatus = 'AUTH';
-      this.user.name = this.userProfile.firstName || "";
-      window.sessionStorage.setItem("userdetails",JSON.stringify(this.user));
-      
-    }
+    this.authService.isAuthenticated$.pipe(
+      filter(value => value),
+      switchMap(() => this.authService.user$))
+      .subscribe(user => {
+        this.user.authStatus = 'AUTH';
+        this.user.name = user?.name || "";
+        window.sessionStorage.setItem("userdetails",JSON.stringify(this.user));
+      });
   }
 
   public login() {
-    this.keycloak.login();
+    this.authService.loginWithRedirect( {
+      appState: { target: this.state.snapshot.url.toString() }
+    });
   }
 
   public logout() {
-    let redirectURI: string = "http://localhost:4200/home";
-    this.keycloak.logout(redirectURI);
+    this.authService.logout({
+      logoutParams: {
+        returnTo: location.origin + '/home'
+      }
+    });
   }
 
 }
